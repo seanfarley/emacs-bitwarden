@@ -48,12 +48,6 @@
   :group 'bitwarden
   :type 'string)
 
-(defvar bitwarden--2fa nil
-  "Bitwarden private, global variable.
-This variable determines if we already asked for master password
-and the two-step verification was incorrect. Reported
-https://github.com/dani-garcia/bitwarden_rs/issues/215")
-
 (defun bitwarden-logged-in-p ()
   "Check if `bitwarden-user' is logged in.
 Returns nil if not logged in."
@@ -111,24 +105,22 @@ for common errors."
     (process-send-string
      proc (concat (read-passwd "Bitwarden master password:") "\n")))
 
-  ;; this is an incorrect return from the server (bitwarden_rs), reported here:
-  ;; https://github.com/dani-garcia/bitwarden_rs/issues/215
-  (when (string-match "^The model state is invalid" string)
-    (if bitwarden--2fa
-        (message "Bitwarden: incorrect two-step code")
+  ;; check for bad password
+  (when (string-match "^Username or password is incorrect" string)
     (message "Bitwarden: incorrect master password"))
-    (setq bitwarden--2fa nil))
 
   ;; read the 2fa code
   (when (string-match "^? Two-step login code:" string)
-    (setq bitwarden--2fa t)
     (process-send-string
      proc (concat (read-passwd "Bitwarden two-step login code:") "\n")))
+
+  ;; check for bad code
+  (when (string-match "^Login failed" string)
+    (message "Bitwarden: incorrect two-step code"))
 
   ;; success! now save the BW_SESSION into the environment so spawned processes
   ;; inherit it
   (when (string-match "^You are logged in!" string)
-    (setq bitwarden--2fa nil)
     ;; set the session env variable so spawned processes inherit
     (string-match "export BW_SESSION=\"\\(.*\\)\"" string)
     (setenv "BW_SESSION" (match-string 1 string))
@@ -142,7 +134,6 @@ for common errors."
     (error "Bitwarden: already logged in"))
   (when (get-process "bitwarden")
     (delete-process "bitwarden"))
-  (setq bitwarden--2fa nil)
   (let ((process (start-process-shell-command
                   "bitwarden"
                   nil                   ; don't use a buffer
