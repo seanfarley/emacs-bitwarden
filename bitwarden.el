@@ -154,8 +154,8 @@ for common errors."
   "Log out bw.  Does not ask for confirmation."
   (interactive)
   (when (bitwarden-logged-in-p)
-    (setenv "BW_SESSION" nil)
-    (bitwarden-runcmd "logout")))
+    (bitwarden-runcmd "logout")
+    (setenv "BW_SESSION" nil)))
 
 (provide 'bitwarden)
 
