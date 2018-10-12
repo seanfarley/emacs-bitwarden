@@ -109,6 +109,10 @@ for common errors."
   (when (string-match "^Username or password is incorrect" string)
     (message "Bitwarden: incorrect master password"))
 
+  ;; if trying to unlock, check if logged in
+  (when (string-match "^You are not logged in" string)
+    (message "Bitwarden: cannot unlock: not logged in"))
+
   ;; read the 2fa code
   (when (string-match "^? Two-step login code:" string)
     (process-send-string
@@ -120,25 +124,40 @@ for common errors."
 
   ;; success! now save the BW_SESSION into the environment so spawned processes
   ;; inherit it
-  (when (string-match "^You are logged in!" string)
+  (when (string-match "^\\(You are logged in\\|Your vault is now unlocked\\)"
+                      string)
     ;; set the session env variable so spawned processes inherit
     (string-match "export BW_SESSION=\"\\(.*\\)\"" string)
     (setenv "BW_SESSION" (match-string 1 string))
     (message
      (concat "Bitwarden: successfully logged in as " bitwarden-user))))
 
-(defun bitwarden-login ()
-  "Prompts user for password if not logged in."
-  (interactive "M")
-  (when (bitwarden-logged-in-p)
-    (error "Bitwarden: already logged in"))
+(defun bitwarden--raw-unlock (cmd)
+  "Raw CMD to either unlock a vault or login.
+
+The only difference between unlock and login is just the name of
+the command and whether to pass the user."
   (when (get-process "bitwarden")
     (delete-process "bitwarden"))
   (let ((process (start-process-shell-command
                   "bitwarden"
                   nil                   ; don't use a buffer
-                  (concat bitwarden-bw-executable " login " bitwarden-user))))
+                  (concat bitwarden-bw-executable " " cmd))))
     (set-process-filter process #'bitwarden--login-proc-filter)))
+
+(defun bitwarden-unlock ()
+  "Unlock bitwarden vault.
+It is not sufficient to check the env variable for BW_SESSION
+since that could be set yet could be expired or incorrect."
+  (interactive "M")
+  (bitwarden--raw-unlock "unlock"))
+
+(defun bitwarden-login ()
+  "Prompts user for password if not logged in."
+  (interactive "M")
+  (when (bitwarden-logged-in-p)
+    (error "Bitwarden: already logged in"))
+  (bitwarden--raw-unlock (concat "login " bitwarden-user)))
 
 ;;;###autoload
 (defun bitwarden-logout ()
