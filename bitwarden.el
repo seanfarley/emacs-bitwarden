@@ -159,13 +159,19 @@ since that could be set yet could be expired or incorrect."
     (error "Bitwarden: already logged in"))
   (bitwarden--raw-unlock (concat "login " bitwarden-user)))
 
+(defun bitwarden-lock ()
+  "Lock the bw vault.  Does not ask for confirmation."
+  (interactive)
+  (when (bitwarden-unlocked-p)
+    (setenv "BW_SESSION" nil)))
+
 ;;;###autoload
 (defun bitwarden-logout ()
   "Log out bw.  Does not ask for confirmation."
   (interactive)
   (when (bitwarden-logged-in-p)
     (bitwarden-runcmd "logout")
-    (setenv "BW_SESSION" nil)))
+    (bitwarden-lock)))
 
 (provide 'bitwarden)
 
