@@ -122,6 +122,11 @@ for common errors."
   (when (string-match "^Login failed" string)
     (message "Bitwarden: incorrect two-step code"))
 
+  ;; check for already logged in
+  (when (string-match "^You are already logged in" string)
+    (string-match "You are already logged in as \\(.*\\)\\." string)
+    (message "Bitwarden: already logged in as %s" (match-string 1 string)))
+
   ;; success! now save the BW_SESSION into the environment so spawned processes
   ;; inherit it
   (when (string-match "^\\(You are logged in\\|Your vault is now unlocked\\)"
@@ -155,8 +160,6 @@ since that could be set yet could be expired or incorrect."
 (defun bitwarden-login ()
   "Prompts user for password if not logged in."
   (interactive "M")
-  (when (bitwarden-logged-in-p)
-    (error "Bitwarden: already logged in"))
   (bitwarden--raw-unlock (concat "login " bitwarden-user)))
 
 (defun bitwarden-lock ()
