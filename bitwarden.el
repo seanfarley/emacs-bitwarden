@@ -193,6 +193,19 @@ since that could be set yet could be expired or incorrect."
     (bitwarden-runcmd "logout")
     (bitwarden-lock)))
 
+;;;###autoload
+(defun bitwarden-getpass (account &optional print-message)
+  "Get password associated with ACCOUNT.
+If run interactively PRINT-MESSAGE gets set and password is
+printed to minibuffer."
+  (interactive "MBitwarden account name: \np")
+  (let ((pass (bitwarden-runcmd "get" "password" account)))
+    (if (not pass)
+        (message "Bitwarden: could not get password for %s" account)
+      (when print-message
+        (message "Bitwarden: password for account %s is: %s" account pass))
+      pass)))
+
 (provide 'bitwarden)
 
 ;;; bitwarden.el ends here
