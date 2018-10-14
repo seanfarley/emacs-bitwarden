@@ -48,6 +48,15 @@
   :group 'bitwarden
   :type 'string)
 
+(defcustom bitwarden-automatic-unlock nil
+  "Optional function to be called to attempt to unlock the vault.
+
+Set this to a lamdba that will evaluate to a password. For
+example, this can be the :secret plist from
+`auth-source-search'."
+  :group 'bitwarden
+  :type 'function)
+
 (defun bitwarden-logged-in-p ()
   "Check if `bitwarden-user' is logged in.
 Returns nil if not logged in."
@@ -155,12 +164,20 @@ the command and whether to pass the user."
 It is not sufficient to check the env variable for BW_SESSION
 since that could be set yet could be expired or incorrect."
   (interactive "M")
-  (bitwarden--raw-unlock "unlock"))
+  (let ((pass (when bitwarden-automatic-unlock
+                (concat " " (funcall bitwarden-automatic-unlock)))))
+    (bitwarden--raw-unlock (concat "unlock" pass))))
 
 (defun bitwarden-login ()
   "Prompts user for password if not logged in."
   (interactive "M")
-  (bitwarden--raw-unlock (concat "login " bitwarden-user)))
+
+  (unless bitwarden-user
+    (setq bitwarden-user (read-string "Bitwarden email: ")))
+
+  (let ((pass (when bitwarden-automatic-unlock
+                (concat " " (funcall bitwarden-automatic-unlock)))))
+    (bitwarden--raw-unlock (concat "login " bitwarden-user pass))))
 
 (defun bitwarden-lock ()
   "Lock the bw vault.  Does not ask for confirmation."
