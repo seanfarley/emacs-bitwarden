@@ -94,7 +94,7 @@ for common errors."
   "Interacts with PROC by sending line-by-line STRING."
   ;; read username if not defined
   (when (string-match "^? Email address:" string)
-    (let ((user (read-string "Bitwarden email:")))
+    (let ((user (read-string "Bitwarden email: ")))
       ;; if we are here then the user forgot to fill in this field so let's do
       ;; that now
       (setq bitwarden-user user)
@@ -103,7 +103,7 @@ for common errors."
   ;; read master password
   (when (string-match "^? Master password:" string)
     (process-send-string
-     proc (concat (read-passwd "Bitwarden master password:") "\n")))
+     proc (concat (read-passwd "Bitwarden master password: ") "\n")))
 
   ;; check for bad password
   (when (string-match "^Username or password is incorrect" string)
@@ -116,7 +116,7 @@ for common errors."
   ;; read the 2fa code
   (when (string-match "^? Two-step login code:" string)
     (process-send-string
-     proc (concat (read-passwd "Bitwarden two-step login code:") "\n")))
+     proc (concat (read-passwd "Bitwarden two-step login code: ") "\n")))
 
   ;; check for bad code
   (when (string-match "^Login failed" string)
