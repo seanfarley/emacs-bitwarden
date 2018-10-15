@@ -93,11 +93,15 @@ for common errors."
             (if (eq exit-code 0)
                 output
               (cond ((string-match "^More than one result was found." output)
-                     (message "Bitwarden: more than one result found"))
+                     (message "Bitwarden: more than one result found")
+                     nil)
                     (t
-                     (message "Bitwarden: unknown error: %s" output)))))
-        (message "Bitwarden: vault is locked"))
-    (message "Bitwarden: you are not logged in")))
+                     (message "Bitwarden: unknown error: %s" output)
+                     nil))))
+        (message "Bitwarden: vault is locked")
+        nil)
+    (message "Bitwarden: you are not logged in")
+    nil))
 
 (defun bitwarden--login-proc-filter (proc string)
   "Interacts with PROC by sending line-by-line STRING."
