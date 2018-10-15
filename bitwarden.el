@@ -205,7 +205,23 @@ printed to minibuffer."
   (interactive "MBitwarden account name: \np")
   (let ((pass (bitwarden-runcmd "get" "password" account)))
     (if (not pass)
-        (message "Bitwarden: could not get password for %s" account)
+        ;; try to unlock automatically, if possible
+        (if bitwarden-automatic-unlock
+            (progn
+              ;; because I don't understand how emacs is asyncronous here nor
+              ;; how to tell it to wait until the process is done, we do so here
+              ;; manually
+              (bitwarden-unlock)
+              (while (get-process "bitwarden")
+                (sleep-for 0.1))
+
+              (setq pass (bitwarden-runcmd "get" "password" account))
+              (if (not pass)
+                  (message "Bitwarden: could not get password for %s" account)
+                (when print-message
+                  (message "Bitwarden: password for account %s is: %s" account pass))
+                pass))
+          (message "Bitwarden: could not get password for %s" account))
       (when print-message
         (message "Bitwarden: password for account %s is: %s" account pass))
       pass)))
