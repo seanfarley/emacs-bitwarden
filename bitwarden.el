@@ -202,6 +202,23 @@ since that could be set yet could be expired or incorrect."
     (bitwarden-runcmd "logout")
     (bitwarden-lock)))
 
+(defun bitwarden--message (msg args &optional print-message)
+  "Print MSG using `message' and `format' with ARGS if non-nil.
+
+PRINT-MESSAGE is an optional parameter to control whether this
+method should print at all. If nil then nothing will be printed
+at all.
+
+This method will prepend 'Bitwarden: ' before each MSG as a
+convenience. Also, return a value of nil so that no strings
+are mistaken as a password (e.g. accidentally interpreting
+'Bitwarden: error' as the password when in fact, it was an error
+message but happens to be last on the method stack)."
+  (when print-message
+    (let ((msg (if args (format msg args) msg)))
+      (message (concat "Bitwarden: " msg))))
+  nil)
+
 ;;;###autoload
 (defun bitwarden-getpass (account &optional print-message recursive-pass)
   "Get password associated with ACCOUNT.
@@ -217,10 +234,7 @@ If RECURSIVE-PASS is set, then treat this call as an attempt to auto-unlock."
      ((string-match bitwarden--err-locked pass)
       ;; try to unlock automatically, if possible
       (if (not bitwarden-automatic-unlock)
-          (progn
-            (when print-message
-              (message "Bitwarden: error: %s" pass))
-            nil)
+          (bitwarden--message "error: %s" pass print-message)
 
         ;; only attempt a retry once; to prevent infinite recursion
         (when (not recursive-pass)
@@ -233,14 +247,9 @@ If RECURSIVE-PASS is set, then treat this call as an attempt to auto-unlock."
           (bitwarden-getpass account print-message
                              (bitwarden-runcmd "get" "password" account)))))
 
-     ((string-match bitwarden--err-logged-in pass)
-      (when print-message
-        (message "Bitwarden: error: %s" pass))
-      nil)
-     ((string-match bitwarden--err-multiple pass)
-      (when print-message
-        (message "Bitwarden: error: %s" pass))
-      nil)
+     ((or (string-match bitwarden--err-logged-in pass)
+          (string-match bitwarden--err-multiple pass))
+      (bitwarden--message "error: %s" pass print-message))
      (t pass))))
 
 (provide 'bitwarden)
