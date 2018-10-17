@@ -57,6 +57,10 @@ example, this can be the :secret plist from
   :group 'bitwarden
   :type 'function)
 
+(defconst bitwarden--err-logged-in "you are not logged in")
+(defconst bitwarden--err-multiple  "more than one result found")
+(defconst bitwarden--err-locked    "vault is locked")
+
 (defun bitwarden-logged-in-p ()
   "Check if `bitwarden-user' is logged in.
 Returns nil if not logged in."
@@ -93,15 +97,10 @@ for common errors."
             (if (eq exit-code 0)
                 output
               (cond ((string-match "^More than one result was found." output)
-                     (message "Bitwarden: more than one result found")
-                     nil)
-                    (t
-                     (message "Bitwarden: unknown error: %s" output)
-                     nil))))
-        (message "Bitwarden: vault is locked")
-        nil)
-    (message "Bitwarden: you are not logged in")
-    nil))
+                     bitwarden--err-multiple)
+                    (t nil))))
+        bitwarden--err-locked)
+    bitwarden--err-logged-in))
 
 (defun bitwarden--login-proc-filter (proc string)
   "Interacts with PROC by sending line-by-line STRING."
@@ -198,33 +197,45 @@ since that could be set yet could be expired or incorrect."
     (bitwarden-lock)))
 
 ;;;###autoload
-(defun bitwarden-getpass (account &optional print-message)
+(defun bitwarden-getpass (account &optional print-message recursive-pass)
   "Get password associated with ACCOUNT.
-If run interactively PRINT-MESSAGE gets set and password is
-printed to minibuffer."
-  (interactive "MBitwarden account name: \np")
-  (let ((pass (bitwarden-runcmd "get" "password" account)))
-    (if (not pass)
-        ;; try to unlock automatically, if possible
-        (if bitwarden-automatic-unlock
-            (progn
-              ;; because I don't understand how emacs is asyncronous here nor
-              ;; how to tell it to wait until the process is done, we do so here
-              ;; manually
-              (bitwarden-unlock)
-              (while (get-process "bitwarden")
-                (sleep-for 0.1))
 
-              (setq pass (bitwarden-runcmd "get" "password" account))
-              (if (not pass)
-                  (message "Bitwarden: could not get password for %s" account)
-                (when print-message
-                  (message "Bitwarden: password for account %s is: %s" account pass))
-                pass))
-          (message "Bitwarden: could not get password for %s" account))
+If run interactively PRINT-MESSAGE gets set and password is
+printed to minibuffer.
+
+If RECURSIVE-PASS is set, then treat this call as an attempt to auto-unlock."
+  (interactive "MBitwarden account name: \np")
+  (let* ((pass (or recursive-pass
+                   (bitwarden-runcmd "get" "password" account))))
+    (cond
+     ((string-match bitwarden--err-locked pass)
+      ;; try to unlock automatically, if possible
+      (if (not bitwarden-automatic-unlock)
+          (progn
+            (when print-message
+              (message "Bitwarden: error: %s" pass))
+            nil)
+
+        ;; only attempt a retry once; to prevent infinite recursion
+        (when (not recursive-pass)
+          ;; because I don't understand how emacs is asyncronous here nor
+          ;; how to tell it to wait until the process is done, we do so here
+          ;; manually
+          (bitwarden-unlock)
+          (while (get-process "bitwarden")
+            (sleep-for 0.1))
+          (bitwarden-getpass account print-message
+                             (bitwarden-runcmd "get" "password" account)))))
+
+     ((string-match bitwarden--err-logged-in pass)
       (when print-message
-        (message "Bitwarden: password for account %s is: %s" account pass))
-      pass)))
+        (message "Bitwarden: error: %s" pass))
+      nil)
+     ((string-match bitwarden--err-multiple pass)
+      (when print-message
+        (message "Bitwarden: error: %s" pass))
+      nil)
+     (t pass))))
 
 (provide 'bitwarden)
 
