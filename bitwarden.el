@@ -32,6 +32,8 @@
 
 (require 'json)
 
+;=============================== custom variables ==============================
+
 (defcustom bitwarden-bw-executable (executable-find "bw")
   "The bw cli executable used by Bitwarden."
   :group 'bitwarden
@@ -60,6 +62,8 @@ example, this can be the :secret plist from
 (defconst bitwarden--err-logged-in "you are not logged in")
 (defconst bitwarden--err-multiple  "more than one result found")
 (defconst bitwarden--err-locked    "vault is locked")
+
+;===================================== util ====================================
 
 (defun bitwarden-logged-in-p ()
   "Check if `bitwarden-user' is logged in.
@@ -161,6 +165,8 @@ the command and whether to pass the user."
                   nil                   ; don't use a buffer
                   (concat bitwarden-bw-executable " " cmd))))
     (set-process-filter process #'bitwarden--login-proc-filter)))
+
+;================================= interactive =================================
 
 (defun bitwarden-unlock ()
   "Unlock bitwarden vault.
