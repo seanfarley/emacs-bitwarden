@@ -234,6 +234,16 @@ message but happens to be last on the method stack)."
       (message (concat "Bitwarden: " msg))))
   nil)
 
+(defun bitwarden--message-pass (pass &optional print-message)
+  "Print PASS using `message' or return PASS.
+
+PRINT-MESSAGE is an optional parameter to control whether this
+method should print at all. If nil then nothing will be printed
+at all but PASS will be returned (e.g. when run non-interactively)."
+  (if print-message
+    (message pass)
+    pass))
+
 ;;;###autoload
 (defun bitwarden-getpass (account &optional print-message recursive-pass)
   "Get password associated with ACCOUNT.
@@ -259,13 +269,14 @@ If RECURSIVE-PASS is set, then treat this call as an attempt to auto-unlock."
           (bitwarden-unlock)
           (while (get-process "bitwarden")
             (sleep-for 0.1))
-          (bitwarden-getpass account print-message
-                             (bitwarden-runcmd "get" "password" account)))))
-
+          (bitwarden--message-pass
+           (bitwarden-getpass account print-message
+                              (bitwarden-runcmd "get" "password" account))
+           print-message))))
      ((or (string-match bitwarden--err-logged-in pass)
           (string-match bitwarden--err-multiple pass))
       (bitwarden--message "error: %s" pass print-message))
-     (t pass))))
+     (t (bitwarden--message-pass pass print-message)))))
 
 (provide 'bitwarden)
 
