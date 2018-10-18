@@ -106,8 +106,10 @@ for common errors."
         bitwarden--err-locked)
     bitwarden--err-logged-in))
 
-(defun bitwarden--login-proc-filter (proc string)
-  "Interacts with PROC by sending line-by-line STRING."
+(defun bitwarden--login-proc-filter (proc string print-message)
+  "Interacts with PROC by sending line-by-line STRING.
+
+If PRINT-MESSAGE is set then messages are printed to minibuffer."
   ;; read username if not defined
   (when (string-match "^? Email address:" string)
     (let ((user (read-string "Bitwarden email: ")))
@@ -123,11 +125,11 @@ for common errors."
 
   ;; check for bad password
   (when (string-match "^Username or password is incorrect" string)
-    (message "Bitwarden: incorrect master password"))
+    (bitwarden--message "incorrect master password" nil print-message))
 
   ;; if trying to unlock, check if logged in
   (when (string-match "^You are not logged in" string)
-    (message "Bitwarden: cannot unlock: not logged in"))
+    (bitwarden--message "cannot unlock: not logged in" nil print-message))
 
   ;; read the 2fa code
   (when (string-match "^? Two-step login code:" string)
@@ -136,12 +138,13 @@ for common errors."
 
   ;; check for bad code
   (when (string-match "^Login failed" string)
-    (message "Bitwarden: incorrect two-step code"))
+    (bitwarden--message "incorrect two-step code" nil print-message))
 
   ;; check for already logged in
   (when (string-match "^You are already logged in" string)
     (string-match "You are already logged in as \\(.*\\)\\." string)
-    (message "Bitwarden: already logged in as %s" (match-string 1 string)))
+    (bitwarden--message
+     "already logged in as %s" (match-string 1 string) print-message))
 
   ;; success! now save the BW_SESSION into the environment so spawned processes
   ;; inherit it
@@ -150,43 +153,55 @@ for common errors."
     ;; set the session env variable so spawned processes inherit
     (string-match "export BW_SESSION=\"\\(.*\\)\"" string)
     (setenv "BW_SESSION" (match-string 1 string))
-    (message
-     (concat "Bitwarden: successfully logged in as " bitwarden-user))))
+    (bitwarden--message
+     "successfully logged in as %s" bitwarden-user print-message)))
 
-(defun bitwarden--raw-unlock (cmd)
+(defun bitwarden--raw-unlock (cmd print-message)
   "Raw CMD to either unlock a vault or login.
 
 The only difference between unlock and login is just the name of
-the command and whether to pass the user."
+the command and whether to pass the user.
+
+If PRINT-MESSAGE is set then messages are printed to minibuffer."
   (when (get-process "bitwarden")
     (delete-process "bitwarden"))
   (let ((process (start-process-shell-command
                   "bitwarden"
                   nil                   ; don't use a buffer
                   (concat bitwarden-bw-executable " " cmd))))
-    (set-process-filter process #'bitwarden--login-proc-filter)))
+    (set-process-filter process (lambda (proc string)
+                                  (bitwarden--login-proc-filter
+                                   proc string print-message)))
+    ;; suppress output to the minibuffer when running this programatically
+    nil))
 
 ;================================= interactive =================================
 
-(defun bitwarden-unlock ()
+(defun bitwarden-unlock (&optional print-message)
   "Unlock bitwarden vault.
+
 It is not sufficient to check the env variable for BW_SESSION
-since that could be set yet could be expired or incorrect."
-  (interactive "M")
+since that could be set yet could be expired or incorrect.
+
+If run interactively PRINT-MESSAGE gets set and messages are
+printed to minibuffer."
+  (interactive "p")
   (let ((pass (when bitwarden-automatic-unlock
                 (concat " " (funcall bitwarden-automatic-unlock)))))
-    (bitwarden--raw-unlock (concat "unlock" pass))))
+    (bitwarden--raw-unlock (concat "unlock" pass print-message) print-message)))
 
-(defun bitwarden-login ()
-  "Prompts user for password if not logged in."
-  (interactive "M")
+(defun bitwarden-login (&optional print-message)
+  "Prompts user for password if not logged in.
 
+If run interactively PRINT-MESSAGE gets set and messages are
+printed to minibuffer."
+  (interactive "p")
   (unless bitwarden-user
     (setq bitwarden-user (read-string "Bitwarden email: ")))
 
   (let ((pass (when bitwarden-automatic-unlock
                 (concat " " (funcall bitwarden-automatic-unlock)))))
-    (bitwarden--raw-unlock (concat "login " bitwarden-user pass))))
+    (bitwarden--raw-unlock (concat "login " bitwarden-user pass) print-message)))
 
 (defun bitwarden-lock ()
   "Lock the bw vault.  Does not ask for confirmation."
