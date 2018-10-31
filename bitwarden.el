@@ -234,15 +234,34 @@ message but happens to be last on the method stack)."
       (message (concat "Bitwarden: " msg))))
   nil)
 
-(defun bitwarden--message-pass (pass &optional print-message)
-  "Print PASS using `message' or return PASS.
+(defun bitwarden--handle-message (msg &optional print-message)
+  "Handle return MSG of `bitwarden--auto-cmd'.
+
+Since `bitwarden--auto-cmd' returns a list of (err-code message),
+this function exists to handle that. Printing the error message
+is entirely dependent on PRINT-MESSAGE (see below for more info
+on PRINT-MESSAGE).
+
+If the error code is 0, then print the password based on
+PRINT-MESSAGE or just return it.
+
+If the error code is non-zero, then print the message based on
+PRINT-MESSAGE and return nil.
 
 PRINT-MESSAGE is an optional parameter to control whether this
 method should print at all. If nil then nothing will be printed
-at all but PASS will be returned (e.g. when run non-interactively)."
-  (if print-message
-    (message pass)
-    pass))
+at all but password will be returned (e.g. when run
+non-interactively)."
+  (let* ((err (nth 0 msg))
+         (pass (nth 1 msg)))
+    (cond
+     ((eq err 0)
+      (if print-message
+          (message pass)
+        pass))
+     (t
+      (bitwarden--message "%s" pass print-message)
+      nil))))
 
 (defun bitwarden--auto-cmd (cmd &optional recursive-pass)
   "Run Bitwarden CMD and attempt to auto unlock.
@@ -274,16 +293,15 @@ password if successful."
      (t (list 0 res)))))
 
 ;;;###autoload
-(defun bitwarden-getpass (account &optional print-message recursive-pass)
+(defun bitwarden-getpass (account &optional print-message)
   "Get password associated with ACCOUNT.
 
 If run interactively PRINT-MESSAGE gets set and password is
-printed to minibuffer.
-
-If RECURSIVE-PASS is set, then treat this call as an attempt to auto-unlock."
+printed to minibuffer."
   (interactive "MBitwarden account name: \np")
-  (let* ((pass (or recursive-pass
-                   (bitwarden-runcmd "get" "password" account))))
+  (bitwarden--handle-message
+   (bitwarden--auto-cmd (list "get" "password" account))
+   print-message))
     (cond
      ((string-match bitwarden--err-locked pass)
       ;; try to unlock automatically, if possible
