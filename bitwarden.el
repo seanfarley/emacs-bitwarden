@@ -188,7 +188,7 @@ printed to minibuffer."
   (interactive "p")
   (let ((pass (when bitwarden-automatic-unlock
                 (concat " " (funcall bitwarden-automatic-unlock)))))
-    (bitwarden--raw-unlock (concat "unlock" pass print-message) print-message)))
+    (bitwarden--raw-unlock (concat "unlock " pass) print-message)))
 
 (defun bitwarden-login (&optional print-message)
   "Prompts user for password if not logged in.
