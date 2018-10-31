@@ -244,6 +244,35 @@ at all but PASS will be returned (e.g. when run non-interactively)."
     (message pass)
     pass))
 
+(defun bitwarden--auto-cmd (cmd &optional recursive-pass)
+  "Run Bitwarden CMD and attempt to auto unlock.
+
+If RECURSIVE-PASS is set, then treat this call as a second
+attempt after trying to auto-unlock.
+
+Returns a tuple of the error code and the error message or
+password if successful."
+  (let* ((res (or recursive-pass (apply 'bitwarden-runcmd cmd))))
+    (cond
+     ((string-match bitwarden--err-locked res)
+      ;; try to unlock automatically, if possible
+      (if (not bitwarden-automatic-unlock)
+          (list 1 (format "error: %s" res))
+
+        ;; only attempt a retry once; to prevent infinite recursion
+        (when (not recursive-pass)
+          ;; because I don't understand how emacs is asyncronous here nor
+          ;; how to tell it to wait until the process is done, we do so here
+          ;; manually
+          (bitwarden-unlock)
+          (while (get-process "bitwarden")
+            (sleep-for 0.1))
+          (bitwarden--auto-cmd cmd (apply 'bitwarden-runcmd cmd)))))
+     ((or (string-match bitwarden--err-logged-in res)
+          (string-match bitwarden--err-multiple res))
+      (list 2 (format "error: %s" res)))
+     (t (list 0 res)))))
+
 ;;;###autoload
 (defun bitwarden-getpass (account &optional print-message recursive-pass)
   "Get password associated with ACCOUNT.
