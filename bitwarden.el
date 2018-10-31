@@ -302,28 +302,24 @@ printed to minibuffer."
   (bitwarden--handle-message
    (bitwarden--auto-cmd (list "get" "password" account))
    print-message))
-    (cond
-     ((string-match bitwarden--err-locked pass)
-      ;; try to unlock automatically, if possible
-      (if (not bitwarden-automatic-unlock)
-          (bitwarden--message "error: %s" pass print-message)
 
-        ;; only attempt a retry once; to prevent infinite recursion
-        (when (not recursive-pass)
-          ;; because I don't understand how emacs is asyncronous here nor
-          ;; how to tell it to wait until the process is done, we do so here
-          ;; manually
-          (bitwarden-unlock)
-          (while (get-process "bitwarden")
-            (sleep-for 0.1))
-          (bitwarden--message-pass
-           (bitwarden-getpass account print-message
-                              (bitwarden-runcmd "get" "password" account))
-           print-message))))
-     ((or (string-match bitwarden--err-logged-in pass)
-          (string-match bitwarden--err-multiple pass))
-      (bitwarden--message "error: %s" pass print-message))
-     (t (bitwarden--message-pass pass print-message)))))
+;;;###autoload
+(defun bitwarden-search (search-str)
+  "Search for vault for items containing SEARCH-STR.
+
+If run interactively PRINT-MESSAGE gets set and password is
+printed to minibuffer.
+
+Returns a vector of hashtables of the results."
+  (let* ((ret (bitwarden--auto-cmd (list "list" "items" "--search"
+                                         search-str)))
+         (result (bitwarden--handle-message ret t)))
+    (when result
+      (let* ((json-object-type 'hash-table)
+             (json-key-type 'string)
+             (json (json-read-from-string result)))
+           json))))
+
 
 (provide 'bitwarden)
 
