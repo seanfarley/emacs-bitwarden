@@ -331,6 +331,198 @@ Returns a vector of hashtables of the results."
              (json (json-read-from-string result)))
            json))))
 
+;================================= widget utils ================================
+
+;; bitwarden-list-dialog-mode
+(defvar bitwarden-list-dialog-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map widget-keymap)
+    (define-key map "n" 'widget-forward)
+    (define-key map "p" 'widget-backward)
+    (define-key map "r" 'bitwarden-list-all-reload)
+    ;; (define-key map "a" 'bitwarden-addpass)
+    (define-key map "s" 'bitwarden-list-all-getpass)
+    (define-key map "w" 'bitwarden-list-all-kill-ring-save)
+    ;; (define-key map "m" 'bitwarden-list-all-movepass)
+    ;; (define-key map "c" 'bitwarden-list-all-create-auth-source-account)
+    ;; (define-key map "d" 'bitwarden-list-all-deletepass)
+    (define-key map "q" 'bitwarden-list-cancel-dialog)
+    map)
+  "Keymap used in recentf dialogs.")
+
+(define-derived-mode bitwarden-list-dialog-mode nil "bitwarden-list-dialog"
+  "Major mode of recentf dialogs.
+
+\\{bitwarden-list-dialog-mode-map}"
+  :syntax-table nil
+  :abbrev-table nil
+  (setq truncate-lines t))
+
+(defsubst bitwarden-list-all-get-item-at-pos ()
+  "Get hashtable from widget at current pos in dialog widget."
+  (let ((widget (get-char-property (point) 'button)))
+    (widget-value widget)))
+
+(defsubst bitwarden-list-all-make-spaces (spaces)
+  "Create a string with SPACES number of whitespaces."
+  (mapconcat 'identity (make-list spaces " ") ""))
+
+(defsubst bitwarden-pad-to-width (item width)
+  "Create a string with ITEM padded to WIDTH."
+  (if (= (length item) width)
+      item
+    (if (>= (length item) width)
+        (concat (substring item 0 (- width 1)) "…")
+      (concat item (bitwarden-list-all-make-spaces (- width (length item)))))))
+
+;================================ widget actions ===============================
+
+;; Dialog settings and actions
+(defun bitwarden-list-cancel-dialog (&rest _ignore)
+  "Cancel the current dialog.
+IGNORE arguments."
+  (interactive)
+  (kill-buffer (current-buffer))
+  (bitwarden--message "dialog canceled" nil t))
+
+(defun bitwarden-list-all-kill-ring-save (&optional widget-item)
+  "Bitwarden `kill-ring-save', insert password to kill ring.
+
+If WIDGET-ITEM is not supplied then look for the widget at the
+current point."
+  (interactive)
+  (let* ((item (or widget-item
+                   (bitwarden-list-all-get-item-at-pos)))
+         (type (gethash "type" item))
+         (login (gethash "login" item)))
+    (if (not (eq type 1))
+        (bitwarden--message "error: not a login item" nil t)
+      (kill-new (gethash "password" login))
+      (message "Password added to kill ring"))))
+
+(defun bitwarden-list-all-item-action (widget &rest _ignore)
+  "Do action to element associated with WIDGET's value.
+IGNORE other arguments."
+  (bitwarden-list-all-kill-ring-save (widget-value widget))
+  (kill-buffer (current-buffer)))
+
+;=================================== widgets ===================================
+
+(defmacro bitwarden-list-dialog (name &rest forms)
+  "Show a dialog buffer with NAME, setup with FORMS."
+  (declare (indent 1) (debug t))
+  `(with-current-buffer (get-buffer-create ,name)
+     ;; Cleanup buffer
+     (let ((inhibit-read-only t)
+           (ol (overlay-lists)))
+       (mapc 'delete-overlay (car ol))
+       (mapc 'delete-overlay (cdr ol))
+       (erase-buffer))
+     (bitwarden-list-dialog-mode)
+     ,@forms
+     (widget-setup)
+     (switch-to-buffer (current-buffer))))
+
+(defsubst bitwarden-list-all-make-element (item)
+  "Create a new cons list from ITEM."
+  (let* ((folder-id (gethash "folderId" item))
+         (login-item (gethash "login" item)))
+    (cons folder-id
+          (list (cons (concat
+                       (bitwarden-pad-to-width (gethash "name" item) 40)
+                       (and login-item
+                            (bitwarden-pad-to-width (gethash "username"
+                                                             login-item) 32))
+                       (format-time-string
+                        "%Y-%m-%d %T"
+                        (date-to-time (bitwarden-pad-to-width
+                                       (gethash "revisionDate" item) 24))))
+                      item)))))
+
+(defun bitwarden-list-all-tree (key val)
+  "Return a `tree-widget' of folders.
+
+Creates a widget with text KEY and items VAL."
+  ;; Represent a sub-menu with a tree widget
+  `(tree-widget
+    :open t
+    :match ignore
+    :node (item :tag ,key
+                :sample-face bold
+                :format "%{%t%}\n")
+    ,@(mapcar 'bitwarden-list-all-item val)))
+
+(defun bitwarden-list-all-item (pass-element)
+  "Return a widget to display PASS-ELEMENT in a dialog buffer."
+
+  ;; Represent a single file with a link widget
+  `(link :tag ,(car pass-element)
+         :button-prefix ""
+         :button-suffix ""
+         :button-face default
+         :format "%[%t\n%]"
+         :help-echo ,(concat "Viewing item " (gethash "id" (cdr pass-element)))
+         :action bitwarden-list-all-item-action
+         ,(cdr pass-element)))
+
+(defun bitwarden-list-all-items (items)
+  "Return a list of widgets to display ITEMS in a dialog buffer."
+  (let* ((folders (mapcar (lambda (e)
+                            (cons
+                             (gethash "id" e)
+                             (gethash "name" e)))
+                          (bitwarden-folders)))
+         (hash (make-hash-table :test 'equal)))
+
+  ;; create hash table where the keys are the folders and each value is a list
+  ;; of the password items
+  (dolist (x (mapcar 'bitwarden-list-all-make-element items))
+    (let* ((folder-id (car x))
+           (key (cdr (assoc folder-id folders)))
+           (val (cdr x))
+           (klist (gethash key hash)))
+      (puthash key (append klist val) hash)))
+
+  ;; TODO: Add headers over list. Think append and concat should be used for
+  ;;this.
+  (mapcar (lambda (key)
+            (bitwarden-list-all-tree key (gethash key hash)))
+          (sort (hash-table-keys hash) #'string<))))
+
+;;;###autoload
+(defun bitwarden-list-all ()
+  "Show a dialog, listing all entries associated with `bitwarden-user'.
+If optional argument GROUP is given, only entries in GROUP will be listed."
+  (interactive)
+  (bitwarden-list-dialog "*bitwarden-list*"
+    (widget-insert (concat "Bitwarden list mode.\n"
+                           "Usage:\n"
+                           "\t<enter> open URL\n"
+                           "\tn next line\n"
+                           "\tp previous line\n"
+                           "\tr reload accounts\n"
+                           ;; "\ta add password\n"
+                           "\ts show password\n"
+                           "\tw add password to kill ring\n"
+                           ;; "\tm move account to group\n"
+                           ;; "\tc create auth-source from account\n"
+                           ;; "\td delete account\n"
+                           "\tq quit\n"))
+    ;; Use a L&F that looks like the recentf menu.
+    (tree-widget-set-theme "folder")
+
+    (apply 'widget-create
+           `(group
+             :indent 0
+             :format "\n%v\n"
+             ,@(bitwarden-list-all-items
+                (bitwarden-search))))
+
+    (widget-create
+     'push-button
+     :notify 'bitwarden-list-cancel-dialog
+     "Cancel")
+    (goto-char (point-min))))
 
 (provide 'bitwarden)
 
