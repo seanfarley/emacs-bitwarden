@@ -257,7 +257,7 @@ non-interactively)."
     (cond
      ((eq err 0)
       (if print-message
-          (message pass)
+          (message "%s" pass)
         pass))
      (t
       (bitwarden--message "%s" pass print-message)
