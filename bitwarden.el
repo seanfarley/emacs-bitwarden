@@ -319,6 +319,11 @@ Returns a vector of hashtables of the results."
              (json-key-type 'string)
              (json (json-read-from-string result)))
            json))))
+
+;;;###autoload
+(defun bitwarden-folders ()
+  "List bitwarden folders."
+  (let* ((ret (bitwarden--auto-cmd (list "list" "folders")))
          (result (bitwarden--handle-message ret t)))
     (when result
       (let* ((json-object-type 'hash-table)
