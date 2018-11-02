@@ -324,7 +324,7 @@ Returns a vector of hashtables of the results."
 (defun bitwarden-folders ()
   "List bitwarden folders."
   (let* ((ret (bitwarden--auto-cmd (list "list" "folders")))
-         (result (bitwarden--handle-message ret t)))
+         (result (bitwarden--handle-message ret)))
     (when result
       (let* ((json-object-type 'hash-table)
              (json-key-type 'string)
