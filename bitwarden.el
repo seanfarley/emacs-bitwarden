@@ -356,7 +356,6 @@ Returns a vector of hashtables of the results."
     (define-key map "r" 'bitwarden-list-all-reload)
     ;; (define-key map "a" 'bitwarden-addpass)
     (define-key map "s" 'bitwarden-list-all-getpass)
-    (define-key map "w" 'bitwarden-list-all-kill-ring-save)
     ;; (define-key map "m" 'bitwarden-list-all-movepass)
     ;; (define-key map "c" 'bitwarden-list-all-create-auth-source-account)
     ;; (define-key map "d" 'bitwarden-list-all-deletepass)
