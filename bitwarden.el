@@ -430,9 +430,9 @@ IGNORE other arguments."
     (cons folder-id
           (list (cons (concat
                        (bitwarden-pad-to-width (gethash "name" item) 40)
-                       (and login-item
-                            (bitwarden-pad-to-width (gethash "username"
-                                                             login-item) 32))
+                       (bitwarden-pad-to-width
+                        (if login-item (gethash "username" login-item) "")
+                        32)
                        (format-time-string
                         "%Y-%m-%d %T"
                         (date-to-time (bitwarden-pad-to-width
