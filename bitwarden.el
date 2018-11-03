@@ -31,6 +31,8 @@
 ;;; Code:
 
 (require 'json)
+(require 'subr-x)
+(require 'tree-widget)
 
 ;=============================== custom variables ==============================
 
