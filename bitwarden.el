@@ -483,8 +483,6 @@ Creates a widget with text KEY and items VAL."
            (klist (gethash key hash)))
       (puthash key (append klist val) hash)))
 
-  ;; TODO: Add headers over list. Think append and concat should be used for
-  ;;this.
   (mapcar (lambda (key)
             (bitwarden-list-all-tree key (gethash key hash)))
           (sort (hash-table-keys hash) #'string<))))
@@ -507,7 +505,15 @@ If optional argument GROUP is given, only entries in GROUP will be listed."
                            ;; "\tm move account to group\n"
                            ;; "\tc create auth-source from account\n"
                            ;; "\td delete account\n"
-                           "\tq quit\n"))
+                           "\tq quit\n\n"))
+
+    (widget-insert
+     (concat
+      ;; compensate for the widget icon width
+      (bitwarden-pad-to-width "Name" (+ 40 5))
+      (bitwarden-pad-to-width "Username" 32)
+      (bitwarden-pad-to-width "Date" 24)))
+
     ;; Use a L&F that looks like the recentf menu.
     (tree-widget-set-theme "folder")
 
