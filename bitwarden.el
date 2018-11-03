@@ -333,12 +333,26 @@ Returns a vector of hashtables of the results."
 
 ;================================= widget utils ================================
 
+(defun bitwarden-list-next ()
+  "Move to the next item."
+  (interactive)
+  (forward-line)
+  (beginning-of-line)
+  (widget-forward 1))
+
+(defun bitwarden-list-prev ()
+  "Move to the previous item."
+  (interactive)
+  (widget-backward 2)
+  (beginning-of-line)
+  (widget-forward 1))
+
 ;; bitwarden-list-dialog-mode
 (defvar bitwarden-list-dialog-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map widget-keymap)
-    (define-key map "n" 'widget-forward)
-    (define-key map "p" 'widget-backward)
+    (define-key map "n" 'bitwarden-list-next)
+    (define-key map "p" 'bitwarden-list-prev)
     (define-key map "r" 'bitwarden-list-all-reload)
     ;; (define-key map "a" 'bitwarden-addpass)
     (define-key map "s" 'bitwarden-list-all-getpass)
