@@ -500,26 +500,6 @@ Creates a widget with text KEY and items VAL."
 If optional argument GROUP is given, only entries in GROUP will be listed."
   (interactive)
   (bitwarden-list-dialog "*bitwarden-list*"
-    (widget-insert (concat "Bitwarden list mode.\n"
-                           "Usage:\n"
-                           "\t<enter> open URL\n"
-                           "\tn next line\n"
-                           "\tp previous line\n"
-                           "\tr reload accounts\n"
-                           ;; "\ta add password\n"
-                           "\ts show password\n"
-                           "\tw add password to kill ring\n"
-                           ;; "\tm move account to group\n"
-                           ;; "\tc create auth-source from account\n"
-                           ;; "\td delete account\n"
-                           "\tq quit\n\n"))
-
-    (widget-insert
-     (concat
-      ;; compensate for the widget icon width
-      (bitwarden-pad-to-width "Name" (+ 40 5))
-      (bitwarden-pad-to-width "Username" 32)
-      (bitwarden-pad-to-width "Date" 24)))
 
     ;; Use a L&F that looks like the recentf menu.
     (tree-widget-set-theme "folder")
@@ -527,7 +507,7 @@ If optional argument GROUP is given, only entries in GROUP will be listed."
     (apply 'widget-create
            `(group
              :indent 0
-             :format "\n%v\n"
+             :format "%v\n"
              ,@(bitwarden-list-all-items
                 (bitwarden-search))))
 
