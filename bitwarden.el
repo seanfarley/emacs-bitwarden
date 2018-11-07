@@ -36,6 +36,12 @@
 
 ;=============================== custom variables ==============================
 
+(defgroup bitwarden nil
+  "Bitwarden functions and settings."
+  :group 'external
+  :tag "bitwarden"
+  :prefix "bitwarden-")
+
 (defcustom bitwarden-bw-executable (executable-find "bw")
   "The bw cli executable used by Bitwarden."
   :group 'bitwarden
