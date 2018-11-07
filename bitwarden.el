@@ -30,7 +30,9 @@
 
 ;;; Code:
 
+(require 'auth-source)
 (require 'json)
+(require 'seq)
 (require 'subr-x)
 (require 'tree-widget)
 
@@ -349,6 +351,59 @@ search which will call `bitwarden-search' as a convenience."
              (json-key-type 'string)
              (json (json-read-from-string result)))
            json))))
+
+;================================= auth-source =================================
+
+(defun bitwarden-auth-source-search (&rest spec)
+  "Search Bitwarden according to SPEC.
+See `auth-source-search' for a description of the plist SPEC."
+  (let* ((host (plist-get spec :host))
+         (max (plist-get spec :max))
+         (user (plist-get spec :user))
+         (res (mapcar #'bitwarden-auth-source--build-result
+                      (bitwarden-search-filter-username host user))))
+    (seq-take res max)))
+
+(defun bitwarden-auth-source--build-result (elt)
+  "Build a auth-source result for ELT.
+
+This is meant to be used by `mapcar' for the results from
+`bitwarden-search-filter-username'."
+  (let* ((host (gethash "name" elt))
+         (login (gethash "login" elt)) ;; always present since
+                                       ;; `bitwarden-search-filter-username'
+                                       ;; tests for it
+         (user (gethash "username" login))
+         (pass (gethash "password" login)))
+    `(:host ,host
+      :user ,user
+      :secret (lambda () ,pass))))
+
+(defvar bitwarden-auth-source-backend
+  (auth-source-backend :type 'bitwarden
+                       :source "." ;; not used
+                       :search-function #'bitwarden-auth-source-search)
+  "Auth-source backend variable for Bitwarden.")
+
+(defun bitwarden-auth-source-backend-parse (entry)
+  "Create auth-source backend from ENTRY."
+  (when (eq entry 'bitwarden)
+    (auth-source-backend-parse-parameters entry bitwarden-auth-source-backend)))
+
+;; advice to add custom auth-source function
+(if (boundp 'auth-source-backend-parser-functions)
+    (add-hook 'auth-source-backend-parser-functions
+              #'bitwarden-auth-source-backend-parse)
+  (advice-add 'auth-source-backend-parse
+              :before-until #'bitwarden-auth-source-backend-parse))
+
+;;;###autoload
+(defun bitwarden-auth-source-enable ()
+  "Enable Bitwarden auth-source by adding it to `auth-sources'."
+  (interactive)
+  (add-to-list 'auth-sources 'bitwarden)
+  (auth-source-forget-all-cached)
+  (message "Btiwarden: auth-source enabled"))
 
 ;================================= widget utils ================================
 
