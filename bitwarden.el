@@ -315,9 +315,6 @@ printed to minibuffer."
 (defun bitwarden-search (&optional search-str)
   "Search for vault for items containing SEARCH-STR.
 
-If run interactively PRINT-MESSAGE gets set and password is
-printed to minibuffer.
-
 Returns a vector of hashtables of the results."
   (let* ((args (and search-str (list "--search" search-str)))
          (ret (bitwarden--auto-cmd (append (list "list" "items") args)))
