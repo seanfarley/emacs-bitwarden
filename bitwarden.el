@@ -325,6 +325,20 @@ Returns a vector of hashtables of the results."
              (json (json-read-from-string result)))
            json))))
 
+(defun bitwarden-search-filter-username (accounts &optional username)
+  "Filter results of `bitwarden-search' ACCOUNTS by USERNAME.
+
+ACCOUNTS can be the results of `bitwarden-search' or a string to
+search which will call `bitwarden-search' as a convenience."
+  (let* ((accounts (if (vectorp accounts)
+                       accounts (bitwarden-search accounts))))
+    (if (and (stringp username) (not (string= username "")))
+        (seq-filter (lambda (elt)
+                      (when-let* ((login (gethash "login" elt)))
+                        (string= (gethash "username" login) username)))
+                    accounts)
+      accounts)))
+
 ;;;###autoload
 (defun bitwarden-folders ()
   "List bitwarden folders."
