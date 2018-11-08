@@ -352,7 +352,7 @@ search which will call `bitwarden-search' as a convenience."
       (let* ((json-object-type 'hash-table)
              (json-key-type 'string)
              (json (json-read-from-string result)))
-           json))))
+        json))))
 
 ;================================= auth-source =================================
 
