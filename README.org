@@ -28,3 +28,14 @@ the [[file:bitwarden.el::(defcustom%20bitwarden-automatic-unlock%20nil][bitwarde
              (entry (nth 0 matches)))
         (plist-get entry :secret)))
 #+END_SRC
+
+** auth-source
+
+There is read-only support for auth-source as well. You can run
+=bitwarden-auth-source-enable= to enable it. For example,
+
+#+BEGIN_SRC emacs-lisp
+(auth-source-search :host "github.com")
+#+END_SRC
+
+will return all logins that match =github.com=.
