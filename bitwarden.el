@@ -354,6 +354,12 @@ search which will call `bitwarden-search' as a convenience."
              (json (json-read-from-string result)))
         json))))
 
+(defun bitwarden-sync ()
+  "Sync local store with server."
+  (interactive)
+  (let ((res (bitwarden--auto-cmd (list "sync"))))
+    (message (nth 1 res))))
+
 ;================================= auth-source =================================
 
 (defun bitwarden-auth-source-search (&rest spec)
