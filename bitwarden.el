@@ -333,7 +333,9 @@ Returns a vector of hashtables of the results."
 ACCOUNTS can be the results of `bitwarden-search' or a string to
 search which will call `bitwarden-search' as a convenience."
   (let* ((accounts (if (vectorp accounts)
-                       accounts (bitwarden-search accounts))))
+                       accounts (bitwarden-search accounts)))
+         ;; filter out matches that are not logins
+         (accounts (seq-filter (lambda (elt) (gethash "login" elt)) accounts)))
     (if (and (stringp username) (not (string= username "")))
         (seq-filter (lambda (elt)
                       (when-let* ((login (gethash "login" elt)))
