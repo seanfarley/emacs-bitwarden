@@ -200,6 +200,7 @@ printed to minibuffer."
                 (concat " " (funcall bitwarden-automatic-unlock)))))
     (bitwarden--raw-unlock (concat "unlock " pass) print-message)))
 
+;;;###autoload
 (defun bitwarden-login (&optional print-message)
   "Prompts user for password if not logged in.
 
@@ -219,7 +220,6 @@ printed to minibuffer."
   (when (bitwarden-unlocked-p)
     (setenv "BW_SESSION" nil)))
 
-;;;###autoload
 (defun bitwarden-logout ()
   "Log out bw.  Does not ask for confirmation."
   (interactive)
@@ -343,7 +343,6 @@ search which will call `bitwarden-search' as a convenience."
                     accounts)
       accounts)))
 
-;;;###autoload
 (defun bitwarden-folders ()
   "List bitwarden folders."
   (let* ((ret (bitwarden--auto-cmd (list "list" "folders")))
