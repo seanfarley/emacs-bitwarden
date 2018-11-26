@@ -410,7 +410,7 @@ This is meant to be used by `mapcar' for the results from
   (interactive)
   (add-to-list 'auth-sources 'bitwarden)
   (auth-source-forget-all-cached)
-  (message "Btiwarden: auth-source enabled"))
+  (message "Bitwarden: auth-source enabled"))
 
 ;================================= widget utils ================================
 
