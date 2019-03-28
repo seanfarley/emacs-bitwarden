@@ -175,15 +175,17 @@ the command and whether to pass the user.
 If PRINT-MESSAGE is set then messages are printed to minibuffer."
   (when (get-process "bitwarden")
     (delete-process "bitwarden"))
-  (let ((process (start-process-shell-command
-                  "bitwarden"
-                  nil                   ; don't use a buffer
-                  (concat bitwarden-bw-executable " " cmd))))
-    (set-process-filter process (lambda (proc string)
-                                  (bitwarden--login-proc-filter
-                                   proc string print-message)))
-    ;; suppress output to the minibuffer when running this programatically
-    nil))
+  (make-process :name "bitwarden"
+                :buffer nil
+                :connection-type 'pipe
+                :command (append (list bitwarden-bw-executable)
+                                 cmd)
+                :filter (lambda (proc string)
+                          (bitwarden--login-proc-filter
+                           proc string print-message)))
+
+  ;; suppress output to the minibuffer when running this programatically
+  nil)
 
 ;================================= interactive =================================
 
@@ -197,8 +199,8 @@ If run interactively PRINT-MESSAGE gets set and messages are
 printed to minibuffer."
   (interactive "p")
   (let ((pass (when bitwarden-automatic-unlock
-                (concat " " (funcall bitwarden-automatic-unlock)))))
-    (bitwarden--raw-unlock (concat "unlock " pass) print-message)))
+                (funcall bitwarden-automatic-unlock))))
+    (bitwarden--raw-unlock (list "unlock" pass) print-message)))
 
 ;;;###autoload
 (defun bitwarden-login (&optional print-message)
@@ -211,8 +213,8 @@ printed to minibuffer."
     (setq bitwarden-user (read-string "Bitwarden email: ")))
 
   (let ((pass (when bitwarden-automatic-unlock
-                (concat " " (funcall bitwarden-automatic-unlock)))))
-    (bitwarden--raw-unlock (concat "login " bitwarden-user pass) print-message)))
+                (funcall bitwarden-automatic-unlock))))
+    (bitwarden--raw-unlock (list "login" bitwarden-user pass) print-message)))
 
 (defun bitwarden-lock ()
   "Lock the bw vault.  Does not ask for confirmation."
