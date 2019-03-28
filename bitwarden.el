@@ -4,7 +4,7 @@
 
 ;; Author: Sean Farley
 ;; URL: https://github.com/seanfarley/emacs-bitwarden
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Created: 2018-09-04
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: extensions processes bw bitwarden
