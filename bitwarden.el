@@ -50,8 +50,14 @@
   :type 'string)
 
 (defcustom bitwarden-data-file
-  (expand-file-name "~/Library/Application Support/Bitwarden CLI/data.json")
-  "The bw cli executable used by Bitwarden."
+  (expand-file-name (cond
+		     ((eq system-type 'darwin)
+		      "~/Library/Application Support/Bitwarden CLI/data.json")
+		     ((eq system-type 'windows-nt)
+		      "~/AppData/Bitwarden CLI/data.json")
+		     (t
+		      "~/.config/Bitwarden CLI/data.json")))
+  "The bw data file used by Bitwarden."
   :group 'bitwarden
   :type 'string)
 
