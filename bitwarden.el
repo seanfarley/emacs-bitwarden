@@ -198,8 +198,9 @@ since that could be set yet could be expired or incorrect.
 If run interactively PRINT-MESSAGE gets set and messages are
 printed to minibuffer."
   (interactive "p")
-  (let ((pass (when bitwarden-automatic-unlock
-                (funcall bitwarden-automatic-unlock))))
+  (let ((pass (if bitwarden-automatic-unlock
+                  (funcall bitwarden-automatic-unlock)
+                "")))
     (bitwarden--raw-unlock (list "unlock" pass) print-message)))
 
 ;;;###autoload
