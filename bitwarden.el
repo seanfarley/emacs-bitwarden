@@ -4,7 +4,7 @@
 
 ;; Author: Sean Farley
 ;; URL: https://github.com/seanfarley/emacs-bitwarden
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Created: 2018-09-04
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: extensions processes bw bitwarden
@@ -50,8 +50,14 @@
   :type 'string)
 
 (defcustom bitwarden-data-file
-  (expand-file-name "~/Library/Application Support/Bitwarden CLI/data.json")
-  "The bw cli executable used by Bitwarden."
+  (expand-file-name (cond
+		     ((eq system-type 'darwin)
+		      "~/Library/Application Support/Bitwarden CLI/data.json")
+		     ((eq system-type 'windows-nt)
+		      "~/AppData/Bitwarden CLI/data.json")
+		     (t
+		      "~/.config/Bitwarden CLI/data.json")))
+  "The bw data file used by Bitwarden."
   :group 'bitwarden
   :type 'string)
 
