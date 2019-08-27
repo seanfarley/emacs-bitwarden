@@ -596,23 +596,25 @@ Creates a widget with text KEY and items VAL."
   "Show a dialog, listing all entries associated with `bitwarden-user'.
 If optional argument GROUP is given, only entries in GROUP will be listed."
   (interactive)
-  (bitwarden-list-dialog "*bitwarden-list*"
+  (if (bitwarden-unlocked-p)
+      (bitwarden-list-dialog "*bitwarden-list*"
 
-    ;; Use a L&F that looks like the recentf menu.
-    (tree-widget-set-theme "folder")
+        ;; Use a L&F that looks like the recentf menu.
+        (tree-widget-set-theme "folder")
 
-    (apply 'widget-create
-           `(group
-             :indent 0
-             :format "%v\n"
-             ,@(bitwarden-list-all-items
-                (bitwarden-search))))
+        (apply 'widget-create
+               `(group
+                 :indent 0
+                 :format "%v\n"
+                 ,@(bitwarden-list-all-items
+                    (bitwarden-search))))
 
-    (widget-create
-     'push-button
-     :notify 'bitwarden-list-cancel-dialog
-     "Cancel")
-    (goto-char (point-min))))
+        (widget-create
+         'push-button
+         :notify 'bitwarden-list-cancel-dialog
+         "Cancel")
+        (goto-char (point-min)))
+    (bitwarden--message "not logged in!" nil t)))
 
 (provide 'bitwarden)
 
