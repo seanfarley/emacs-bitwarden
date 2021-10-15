@@ -89,14 +89,16 @@ example, this can be the :secret plist from
 (defun bitwarden-logged-in-p ()
   "Check if `bitwarden-user' is logged in.
 Returns nil if not logged in."
-  (let* ((json-object-type 'hash-table)
-         (json-key-type 'string)
-         (json (json-read-file bitwarden-data-file)))
-    (gethash "__PROTECTED__key" json)))
+  (let* ((ret (apply #'bitwarden--raw-runcmd "login" '("--check")))
+	 (exit-code (nth 0 ret)))
+    (eq exit-code 0)))
 
 (defun bitwarden-unlocked-p ()
-  "Check if we have already set the 'BW_SESSION' environment variable."
-  (and (bitwarden-logged-in-p) (getenv "BW_SESSION")))
+  "Check if `bitwarden-user' is loged in.
+Returns nil if not unlocked."
+  (let* ((ret (apply #'bitwarden--raw-runcmd "unlock" '("--check")))
+	 (exit-code (nth 0 ret)))
+    (eq exit-code 0)))
 
 (defun bitwarden--raw-runcmd (cmd &rest args)
   "Run bw command CMD with ARGS.
