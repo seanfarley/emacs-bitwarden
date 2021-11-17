@@ -39,3 +39,39 @@ There is read-only support for auth-source as well. You can run
 #+END_SRC
 
 will return all logins that match =github.com=.
+
+** async support
+
+For certain emacs tasks (e.g. github modeline), emacs will run the process
+asynchronously which means a new emacs process. For this reason, this bitwarden
+wrapper will need to be a macro so that the session is preserved. Here is an one
+such way to do that:
+
+#+begin_src emacs-lisp
+(defmacro smf/bitwarden-init ()
+  "Needs to be a macro due to async.
+
+Async doesn't load your entire config (for performance reasons)
+so this needs to be a macro and added to async hooks."
+  `(progn
+     (require 'bitwarden nil t)
+     (setq bitwarden-user "sean@farley.io"
+
+           bitwarden-automatic-unlock (let* ((auth-sources
+                                              '(macos-keychain-internet))
+                                             (matches (auth-source-search
+                                                       :user "sean@farley.io"
+                                                       :host "bitwarden.farley.io"
+                                                       :require '(:secret)
+                                                       :max 1))
+                                             (entry (nth 0 matches)))
+                                        (plist-get entry :secret)))
+     (bitwarden-auth-source-enable)))
+#+end_src
+
+And then add it to async hooks as such,
+
+#+begin_src emacs-lisp
+(add-hook 'doom-modeline-before-github-fetch-notification-hook
+          (lambda () (smf/bitwarden-init)))"
+#+end_src
