@@ -18,7 +18,7 @@ As a convenience, you can store your master password in your OS keychain and use
 the [[file:bitwarden.el::(defcustom%20bitwarden-automatic-unlock%20nil][bitwarden-automatic-unlock]] variable. For example, to temporarily set the
 =auth-source= to the macos keychain and then query that,
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq bitwarden-automatic-unlock
       (let* ((auth-sources '(macos-keychain-internet))
              (matches (auth-source-search :user "sean@farley.io"
@@ -27,7 +27,7 @@ the [[file:bitwarden.el::(defcustom%20bitwarden-automatic-unlock%20nil][bitwarde
                                           :max 1))
              (entry (nth 0 matches)))
         (plist-get entry :secret)))
-#+END_SRC
+#+end_src
 
 ** auth-source
 
