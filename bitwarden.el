@@ -80,6 +80,21 @@ example, this can be the :secret plist from
   :group 'bitwarden
   :type 'function)
 
+(defcustom bitwarden-api-secret-key nil
+  "Optional function to be called to return API secret key.
+
+Set this to a lambda that will evaluate to a string (the API secret key)."
+  :group 'bitwarden
+  :type 'function)
+
+(defcustom bitwarden-api-client-id nil
+  "Optional function to be called to return the API client id..
+
+Set this to a lambda that will evaluate to a string (the API client id)."
+  :group 'bitwarden
+  :type 'function)
+
+
 (defconst bitwarden--err-logged-in "you are not logged in")
 (defconst bitwarden--err-multiple  "more than one result found")
 (defconst bitwarden--err-locked    "vault is locked")
@@ -223,12 +238,16 @@ printed to minibuffer."
 If run interactively PRINT-MESSAGE gets set and messages are
 printed to minibuffer."
   (interactive "p")
-  (unless bitwarden-user
-    (setq bitwarden-user (read-string "Bitwarden email: ")))
-
-  (let ((pass (when bitwarden-automatic-unlock
-                (funcall bitwarden-automatic-unlock))))
-    (bitwarden--raw-unlock (list "login" bitwarden-user pass) print-message)))
+  (if (and bitwarden-api-client-id bitwarden-api-secret-key)
+      (progn
+	(setenv "BW_CLIENTID" (funcall bitwarden-api-client-id))
+	(setenv "BW_CLIENTSECRET" (funcall bitwarden-api-secret-key))
+	(bitwarden--raw-unlock (list "login") print-message))
+    (unless bitwarden-user
+      (setq bitwarden-user (read-string "Bitwarden email: ")))
+    (let ((pass (when bitwarden-automatic-unlock
+                  (funcall bitwarden-automatic-unlock))))
+      (bitwarden--raw-unlock (list "login" bitwarden-user pass) print-message))))
 
 (defun bitwarden-lock ()
   "Lock the bw vault.  Does not ask for confirmation."
@@ -614,7 +633,7 @@ If optional argument GROUP is given, only entries in GROUP will be listed."
          :notify 'bitwarden-list-cancel-dialog
          "Cancel")
         (goto-char (point-min)))
-    (bitwarden--message "not logged in!" nil t)))
+    (bitwarden--message "vault not unlocked!" nil t)))
 
 (provide 'bitwarden)
 
