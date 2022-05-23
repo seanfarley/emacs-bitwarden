@@ -233,7 +233,7 @@ printed to minibuffer."
 
 ;;;###autoload
 (defun bitwarden-login (&optional print-message)
-  "Prompts user for password if not logged in.
+  "Prompt user for password if not logged in.
 
 If run interactively PRINT-MESSAGE gets set and messages are
 printed to minibuffer."
