@@ -33,7 +33,7 @@ If your bitwarden store is kept on bitwarden servers (as opposed to hosting your
 may find that the above approach does not work and gives a =Symbol’s value as variable is void:
 print-message= error. This may be due to a recent change in bitwarden login procedures which require
 the use of an API application key. To check if this is indeed the problem try logging in from the
-command line with =bw login [username] 'password= if you are prompted for an API key then the
+command line with =bw login [username] 'password'= if you are prompted for an API key then the
 following instructions may resolve your problem.
 
 Login to the [[https://vault.bitwarden.com][bitwarden web interface]], login to your vault, go to the
