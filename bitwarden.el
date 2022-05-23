@@ -74,7 +74,7 @@
 (defcustom bitwarden-automatic-unlock nil
   "Optional function to be called to attempt to unlock the vault.
 
-Set this to a lamdba that will evaluate to a password. For
+Set this to a function that will evaluate to a password. For
 example, this can be the :secret plist from
 `auth-source-search'."
   :group 'bitwarden
@@ -83,14 +83,14 @@ example, this can be the :secret plist from
 (defcustom bitwarden-api-secret-key nil
   "Optional function to be called to return API secret key.
 
-Set this to a lambda that will evaluate to a string (the API secret key)."
+Set this to a function that will evaluate to a string (the API secret key)."
   :group 'bitwarden
   :type 'function)
 
 (defcustom bitwarden-api-client-id nil
   "Optional function to be called to return the API client id..
 
-Set this to a lambda that will evaluate to a string (the API client id)."
+Set this to a function that will evaluate to a string (the API client id)."
   :group 'bitwarden
   :type 'function)
 
