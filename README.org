@@ -36,7 +36,7 @@ the use of an API application key. To check if this is indeed the problem try lo
 command line with =bw login [username] 'password= if you are prompted for an API key then the
 following instructions may resolve your problem.
 
-Login to the [bitwarden web interface](https://vault.bitwarden.com), login to your vault, go to the
+Login to the [[https://vault.bitwarden.com][bitwarden web interface]], login to your vault, go to the
 =settings= tab and scroll down to the API Key section. Follow the instructions to setup your API
 key. You will need both your =client_id= and your =client_secret=. Then add to your init.el configuration
 two functions =bitwarden-api-client-id= and =bitwarden-api-client-secret= which have the same specification format as =bitwarden-automatic-unlock=.
@@ -49,11 +49,13 @@ For example, here is the relevant section from my configuration.
       (plist-get (car (auth-source-search :host "bitwarden.id"))
                  :secret))
 #+end_src
+
 Note that these query two lines in my =authinfo.gpg= that have the form:
-#+BEGIN_QUOTE
+
+#+begin_quote
 machine bitwarden.key login YYY password XXX
 machine bitwarden.id login YYY password XXX
-#+END_QUOTE
+#+end_quote
 
 ** auth-source
 
