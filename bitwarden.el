@@ -105,14 +105,14 @@ Set this to a lambda that will evaluate to a string (the API client id)."
   "Check if `bitwarden-user' is logged in.
 Returns nil if not logged in."
   (let* ((ret (apply #'bitwarden--raw-runcmd "login" '("--check")))
-	 (exit-code (nth 0 ret)))
+         (exit-code (nth 0 ret)))
     (eq exit-code 0)))
 
 (defun bitwarden-unlocked-p ()
   "Check if `bitwarden-user' is loged in.
 Returns nil if not unlocked."
   (let* ((ret (apply #'bitwarden--raw-runcmd "unlock" '("--check")))
-	 (exit-code (nth 0 ret)))
+         (exit-code (nth 0 ret)))
     (eq exit-code 0)))
 
 (defun bitwarden--raw-runcmd (cmd &rest args)
@@ -240,9 +240,9 @@ printed to minibuffer."
   (interactive "p")
   (if (and bitwarden-api-client-id bitwarden-api-secret-key)
       (progn
-	(setenv "BW_CLIENTID" (funcall bitwarden-api-client-id))
-	(setenv "BW_CLIENTSECRET" (funcall bitwarden-api-secret-key))
-	(bitwarden--raw-unlock (list "login") print-message))
+        (setenv "BW_CLIENTID" (funcall bitwarden-api-client-id))
+        (setenv "BW_CLIENTSECRET" (funcall bitwarden-api-secret-key))
+        (bitwarden--raw-unlock (list "login") print-message))
     (unless bitwarden-user
       (setq bitwarden-user (read-string "Bitwarden email: ")))
     (let ((pass (when bitwarden-automatic-unlock
