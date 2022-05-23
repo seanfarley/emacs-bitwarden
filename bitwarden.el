@@ -373,7 +373,7 @@ search which will call `bitwarden-search' as a convenience."
          (accounts (seq-filter (lambda (elt) (gethash "login" elt)) accounts)))
     (if (and (stringp username) (not (string= username "")))
         (seq-filter (lambda (elt)
-                      (when-let* ((login (gethash "login" elt)))
+                      (when-let ((login (gethash "login" elt)))
                         (string= (gethash "username" login) username)))
                     accounts)
       accounts)))
