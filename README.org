@@ -29,18 +29,20 @@ the [[file:bitwarden.el::(defcustom%20bitwarden-automatic-unlock%20nil][bitwarde
         (plist-get entry :secret)))
 #+end_src
 
-If your bitwarden store is kept on bitwarden servers (as opposed to hosting your own server), you
-may find that the above approach does not work and gives a =Symbol’s value as variable is void:
-print-message= error. This may be due to a recent change in bitwarden login procedures which require
-the use of an API application key. To check if this is indeed the problem try logging in from the
-command line with =bw login [username] 'password'= if you are prompted for an API key then the
-following instructions may resolve your problem.
+If your bitwarden store is kept on bitwarden servers (as opposed to hosting your
+own server), you may find that the above approach does not work and gives a
+=Symbol’s value as variable is void: print-message= error. This may be due to a
+recent change in bitwarden login procedures which require the use of an API
+application key. To check if this is indeed the problem try logging in from the
+command line with =bw login [username] 'password'= if you are prompted for an API
+key then the following instructions may resolve your problem.
 
-Login to the [[https://vault.bitwarden.com][bitwarden web interface]], login to your vault, go to the
-=settings= tab and scroll down to the API Key section. Follow the instructions to setup your API
-key. You will need both your =client_id= and your =client_secret=. Then add to your init.el configuration
-two functions =bitwarden-api-client-id= and =bitwarden-api-client-secret= which have the same specification format as =bitwarden-automatic-unlock=.
-Here is an example emacs configuration,
+Login to the [[https://vault.bitwarden.com][bitwarden web interface]], login to your vault, go to the =settings=
+tab and scroll down to the API Key section. Follow the instructions to setup
+your API key. You will need both your =client_id= and your =client_secret=. Then add
+to your init.el configuration two functions =bitwarden-api-client-id= and
+=bitwarden-api-client-secret= which have the same specification format as
+=bitwarden-automatic-unlock=. Here is an example emacs configuration,
 
 #+begin_src emacs-lisp
 (setq bitwarden-api-secret-key
