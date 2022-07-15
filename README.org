@@ -6,7 +6,7 @@ A Bitwarden command wrapper for Emacs.
 
 ** Installation
 
-To use this package you will need the [[https://github.com/bitwarden/cli][Bitwarden CLI]].
+To use this package you will need the [[https://github.com/bitwarden/clients/tree/master/apps/cli][Bitwarden CLI]].
 
 ** Automatic unlock
 
