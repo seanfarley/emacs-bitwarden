@@ -245,8 +245,9 @@ printed to minibuffer."
         (bitwarden--raw-unlock (list "login") print-message))
     (unless bitwarden-user
       (setq bitwarden-user (read-string "Bitwarden email: ")))
-    (let ((pass (when bitwarden-automatic-unlock
-                  (funcall bitwarden-automatic-unlock))))
+    (let ((pass (if bitwarden-automatic-unlock
+                    (funcall bitwarden-automatic-unlock)
+                  "")))
       (bitwarden--raw-unlock (list "login" bitwarden-user pass) print-message))))
 
 (defun bitwarden-lock ()
