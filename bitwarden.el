@@ -253,8 +253,8 @@ printed to minibuffer."
 (defun bitwarden-lock ()
   "Lock the bw vault.  Does not ask for confirmation."
   (interactive)
-  (when (bitwarden-unlocked-p)
-    (setenv "BW_SESSION" nil)))
+  (bitwarden-runcmd "lock")
+  (setenv "BW_SESSION" nil))
 
 (defun bitwarden-logout ()
   "Log out bw.  Does not ask for confirmation."
