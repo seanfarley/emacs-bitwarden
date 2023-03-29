@@ -157,7 +157,7 @@ If PRINT-MESSAGE is set then messages are printed to minibuffer."
       (process-send-string proc (concat bitwarden-user "\n"))))
 
   ;; read master password
-  (when (string-match "^? Master password:" string)
+  (when (string-match "^? Master password:.*" string)
     (process-send-string
      proc (concat (read-passwd "Bitwarden master password: ") "\n")))
 
