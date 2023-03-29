@@ -344,7 +344,7 @@ password if successful."
 
 If run interactively PRINT-MESSAGE gets set and password is
 printed to minibuffer."
-  (interactive "MBitwarden account name: \np")
+  (interactive "Bitwarden account name: \np")
   (bitwarden--handle-message
    (bitwarden--auto-cmd (list "get" "password" account))
    print-message))
