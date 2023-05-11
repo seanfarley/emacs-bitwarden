@@ -403,24 +403,45 @@ See `auth-source-search' for a description of the plist SPEC."
   (let* ((host (plist-get spec :host))
          (max (plist-get spec :max))
          (user (plist-get spec :user))
-         (res (mapcar #'bitwarden-auth-source--build-result
-                      (bitwarden-search-filter-username host user))))
-    (seq-take res max)))
+         (port (plist-get spec :port))
+         ;; It could be that the port being a string
+         (port (if (stringp port) (string-to-number port) port))
+         (filter-by-port (lambda (elt)
+                           (equal port (plist-get elt :port))))
+         (res (seq-mapcat #'bitwarden-auth-source--build-result
+                          (bitwarden-search-filter-username host user))))
+    ;; It is easier to filter by port here
+    (seq-take (if port (seq-filter filter-by-port res) res)
+              max)))
 
 (defun bitwarden-auth-source--build-result (elt)
-  "Build a auth-source result for ELT.
+  "Build a auth-source result for ELT which is a single item from the bitwarden.
+To be able to filter records by port, function creates a separate
+records for every URIs withing an item. host:port is not valid
+URI, and it has to be defined like this:
 
-This is meant to be used by `mapcar' for the results from
+//host:port
+
+Extra // is required for url-generic-parse-url function. This
+function is meant to be used by `mapcat' for the results from
 `bitwarden-search-filter-username'."
   (let* ((host (gethash "name" elt))
          (login (gethash "login" elt)) ;; always present since
                                        ;; `bitwarden-search-filter-username'
                                        ;; tests for it
          (user (gethash "username" login))
-         (pass (gethash "password" login)))
-    `(:host ,host
-      :user ,user
-      :secret (lambda () ,pass))))
+         (pass (gethash "password" login))
+         ;; URIs have to be parsed
+         (uris (gethash "uris" login)))
+    (seq-reduce (lambda (result uri)
+                  (let ((uri (url-generic-parse-url (gethash "uri" uri))))
+                    (cons (list :host host
+                                :port (url-port uri)
+                                :user user
+                                :secret (lambda () pass))
+                          result)))
+                uris
+                '())))
 
 (defvar bitwarden-auth-source-backend
   (auth-source-backend :type 'bitwarden
