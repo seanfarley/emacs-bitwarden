@@ -363,22 +363,6 @@ Returns a vector of hashtables of the results."
              (json (json-read-from-string result)))
            json))))
 
-(defun bitwarden-search-filter-username (accounts &optional username)
-  "Filter results of `bitwarden-search' ACCOUNTS by USERNAME.
-
-ACCOUNTS can be the results of `bitwarden-search' or a string to
-search which will call `bitwarden-search' as a convenience."
-  (let* ((accounts (if (vectorp accounts)
-                       accounts (bitwarden-search accounts)))
-         ;; filter out matches that are not logins
-         (accounts (seq-filter (lambda (elt) (gethash "login" elt)) accounts)))
-    (if (and (stringp username) (not (string= username "")))
-        (seq-filter (lambda (elt)
-                      (when-let ((login (gethash "login" elt)))
-                        (string= (gethash "username" login) username)))
-                    accounts)
-      accounts)))
-
 (defun bitwarden-folders ()
   "List bitwarden folders."
   (let* ((ret (bitwarden--auto-cmd (list "list" "folders")))
@@ -397,23 +381,47 @@ search which will call `bitwarden-search' as a convenience."
 
 ;================================= auth-source =================================
 
+(defun bitwarden--users-account-p (account usernames)
+  "Check if ACCOUNT belongs to any of the given USERNAMES."
+  (let* ((login (gethash "login" account))
+         (account-username (when login (gethash "username" login))))
+    (when account-username
+      (seq-contains-p usernames account-username #'string=))))
+
+(defun bitwarden--account-login-p (account)
+  "Check if ACCOUNT has login information."
+  (gethash "login" account))
+
 (defun bitwarden-auth-source-search (&rest spec)
   "Search Bitwarden according to SPEC.
 See `auth-source-search' for a description of the plist SPEC."
-  (let* ((host (plist-get spec :host))
-         (max (plist-get spec :max))
-         (user (plist-get spec :user))
-         (res (mapcar #'bitwarden-auth-source--build-result
-                      (bitwarden-search-filter-username host user))))
-    (seq-take res max)))
+  (let* ((hosts (ensure-list (plist-get spec :host)))
+         (maxes (ensure-list (plist-get spec :max)))
+         (users (ensure-list (plist-get spec :user)))
+         (all-accounts
+          (if hosts
+              (seq-mapcat #'bitwarden-search hosts)
+            (bitwarden-search)))
+         (login-accounts
+          (seq-filter #'bitwarden--account-login-p all-accounts))
+         (users-accounts
+          (if users
+              (seq-filter
+               (lambda (account)
+                 (bitwarden--users-account-p account users))
+               login-accounts)
+            login-accounts))
+         (formatted-results
+          (seq-map 'bitwarden-auth-source--build-result users-accounts)))
+    (seq-take formatted-results (seq-max maxes))))
 
-(defun bitwarden-auth-source--build-result (elt)
-  "Build a auth-source result for ELT.
+(defun bitwarden-auth-source--build-result (account)
+  "Build a auth-source result for ACCOUNT.
 
-This is meant to be used by `mapcar' for the results from
-`bitwarden-search-filter-username'."
-  (let* ((host (gethash "name" elt))
-         (login (gethash "login" elt)) ;; always present since
+This is meant to be used by `bitwarden-auth-source-search' to format the final
+results."
+  (let* ((host (gethash "name" account))
+         (login (gethash "login" account)) ;; always present since
                                        ;; `bitwarden-search-filter-username'
                                        ;; tests for it
          (user (gethash "username" login))
