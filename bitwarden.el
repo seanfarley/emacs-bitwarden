@@ -119,13 +119,18 @@ Returns nil if not unlocked."
   "Run bw command CMD with ARGS.
 Returns a list with the first element being the exit code and the
 second element being the output."
-  (with-temp-buffer
-    (list (apply 'call-process
-                 bitwarden-bw-executable
-                 nil (current-buffer) nil
-                 (cons cmd args))
-          (replace-regexp-in-string "\n$" ""
-                                    (buffer-string)))))
+  (let ((stderr (get-buffer-create " *bitwarden-bw-stderr*")))
+    (with-temp-buffer
+      (list (apply 'call-process
+                   bitwarden-bw-executable
+                   nil               ;; input
+                   (list
+                    (current-buffer) ;; stdout
+                    nil)             ;; TODO capture stderr
+                   nil               ;; re-display buffer
+                   (cons cmd args))
+            (replace-regexp-in-string "\n$" ""
+                                      (buffer-string))))))
 
 (defun bitwarden-runcmd (cmd &rest args)
   "Run bw command CMD with ARGS.
