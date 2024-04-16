@@ -368,6 +368,17 @@ Returns a vector of hashtables of the results."
              (json (json-read-from-string result)))
            json))))
 
+;;;###autoload
+(defun bitwarden-get-info-by-id (id)
+  "The id can be found using the bitwarden CLI. For example: bw list items --pretty.
+To access the account password: `(gethash \"password\" (gethash \"login\" ))'"
+  (let* ((result (bitwarden--handle-message (bitwarden--auto-cmd (list "get" "item" id)))))
+        (when result
+      (let* ((json-object-type 'hash-table)
+             (json-key-type 'string)
+             (json (json-read-from-string result)))
+         (json-read-from-string result)))))
+
 (defun bitwarden-folders ()
   "List bitwarden folders."
   (let* ((ret (bitwarden--auto-cmd (list "list" "folders")))
